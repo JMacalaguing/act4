@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RFID Data Display</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+   
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <style>
+        /* Gradient background from blue to green */
+        body {
+            background: linear-gradient(135deg, #4e73df, #1f9d6d);
+        }
+    </style>
+    <script>
+     // Function to play the bell sound
+     function playBellSound() {
+         const bellSound = document.getElementById('bell-sound');
+         bellSound.play().catch(error => {
+             console.log("Error playing sound:", error);
+         });
+     }
+
+     function playErrorSound() {
+         const bellSound = document.getElementById('error-sound');
+         bellSound.play().catch(error => {
+             console.log("Error playing sound:", error);
+         });
+     }
+
+     // Connect to MQTT broker
+    const client = mqtt.connect('ws://192.168.1.4:9001');
+
+    client.on('connect', () => {
+        console.log('Connected to MQTT broker');
+        // Subscribe to the topic you want to listen to
+        client.subscribe('RFID_LOGIN', (err) => {
+            if (err) {
+                console.error("Subscription error:", err);
+            }
+        });
+    });
+
+		
+		
+
+
+
+      // Listen for messages on the subscribed topic
+      client.on('message', (topic, message) => {
+        var parsedMessage = JSON.parse(message);
+        console.log('Message received:', message.toString());
+        var status = parsedMessage.status;
+        var rfid = parsedMessage.rfid;
+
+        console.log("Status: "+ status);
+        document.getElementById("latest-rfid").textContent = rfid;
+        document.getElementById("status-message").textContent = status;
+	var u1 = new SpeechSynthesisUtterance(status);
+		u1.lang = "en";
+		u1.pitch = 1;
+		u1.rate = 1;
+		//u1.voice = voices[10];
+		u1.voiceURI = 'native';
+		u1.volume = 1;
+		speechSynthesis.speak(u1);
+        if (status != "RFID Not Found"){
+            playBellSound();
+		
+        }else{
+            playErrorSound();
+        }
+        // Play the bell sound when a message is received
+
+		
+       
+    });
+
+    client.on('error', (err) => {
+        console.error("MQTT error:", err);
+    });
+</script>
+</head>
+<body class="font-sans antialiased text-white">
+    <audio id="bell-sound" src="bell.wav" preload="auto"></audio>
+    <audio id="error-sound" src="notfound.wav" preload="auto"></audio>
+
+    <div class="container mx-auto mt-20 p-6">
+        <div class="max-w-xl mx-auto bg-white bg-opacity-70 rounded-lg shadow-lg p-8">
+            <h1 class="text-3xl font-extrabold text-center text-gray-800 mb-6">RFID Data Display</h1>
+            
+            <div class="space-y-8">
+                <div class="bg-gradient-to-r from-blue-500 via-green-400 to-blue-500 p-4 rounded-lg shadow-md">
+                    <h2 class="text-xl font-semibold mb-2 text-white">Latest RFID Value:</h2>
+                    <div id="latest-rfid" class="text-lg text-gray-900 font-medium">
+                        No RFID data available
+                    </div>
+                </div>
+                
+                <div class="bg-gradient-to-r from-blue-500 via-green-400 to-blue-500 p-4 rounded-lg shadow-md">
+                    <h2 class="text-xl font-semibold mb-2 text-white">Status:</h2>
+                    <div id="status-message" class="text-lg text-gray-900 font-medium">
+                        No status available
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
